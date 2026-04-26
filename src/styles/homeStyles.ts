@@ -51,4 +51,10 @@ export const styles = StyleSheet.create({
   marginBottom: 15,
   fontSize: 16,
 },
+secondaryButton: {
+  backgroundColor: "#3b82f6",
+  padding: 15,
+  borderRadius: 10,
+  marginBottom: 10,
+},
 });

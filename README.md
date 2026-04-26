@@ -1,97 +1,76 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+﻿# Virus Game App
 
-# Getting Started
+A React Native client for a multiplayer social-deduction game.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+The app connects to a backend API and WebSocket game server to create rooms, join players, and render live game phases.
 
-## Step 1: Start Metro
+## What this project does
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+- Let players enter a display name and create a game room
+- Connect to a remote WebSocket server for real-time game state updates
+- Render game phases and live player data via `PhaseRenderer`
+- Support host actions like starting the game, voting, and advancing phases
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+## Project structure
+
+- `App.tsx` — root app navigator with Home / Rooms / Game screens
+- `src/screens/HomeScreen.tsx` — player name input and room creation flow
+- `src/screens/RoomsScreen.tsx` — room list placeholder and lobby navigation
+- `src/screens/GameScreen.tsx` — live game UI connected through WebSockets
+- `src/hooks/useGameSocket.ts` — WebSocket hook for state, chat, and game actions
+- `src/services/api.ts` — backend HTTP helpers for room creation and open rooms
+- `src/config.ts` — API and WS server URLs
+
+## Setup
+
+### Prerequisites
+
+- Node.js 22.11.0 or newer
+- React Native environment configured for Android and/or iOS
+- Android Studio for Android or Xcode for iOS
+
+### Install dependencies
 
 ```sh
-# Using npm
+npm install
+```
+
+### Start Metro
+
+```sh
 npm start
-
-# OR using Yarn
-yarn start
 ```
 
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
+### Run on Android
 
 ```sh
-# Using npm
 npm run android
-
-# OR using Yarn
-yarn android
 ```
 
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+### Run on iOS
 
 ```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+## Notes
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+- Backend endpoints are configured in `src/config.ts`.
+- `HomeScreen` currently creates a room and navigates into the live game screen.
+- `RoomsScreen` is a simple placeholder and can be expanded to show actual open rooms.
+- The game state is normalized inside `src/hooks/useGameSocket.ts` from server messages.
 
-## Step 3: Modify your app
+## Development commands
 
-Now that you have successfully run the app, let's make changes!
+- `npm start` — launch Metro bundler
+- `npm run android` — build and run on Android
+- `npm run ios` — build and run on iOS
+- `npm test` — run Jest tests
+- `npm run lint` — validate code style
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+## Extending the app
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+- Add real room discovery in `src/screens/RoomsScreen.tsx`
+- Improve game phase UI in `src/components/game/`
+- Add offline error handling and retry logic for WebSocket connections
+- Add a join-room flow for players connecting to existing games

@@ -20,9 +20,9 @@ type Props = NativeStackScreenProps<RootStackParamList, "Home">;
 export default function HomeScreen({ navigation }: Props) {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");   // <-- new
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const handleContinue = async () => {
+  const handleCreateRoom = async () => {
     Keyboard.dismiss();
     const trimmed = name.trim();
     if (!trimmed) {
@@ -47,6 +47,16 @@ export default function HomeScreen({ navigation }: Props) {
     }
   };
 
+  const handleJoinRoom = () => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      setErrorMsg("Por favor ingresa tu nombre");
+      return;
+    }
+    setErrorMsg("");
+    navigation.navigate("Rooms", { name: trimmed });
+  };
+
   return (
     <View style={styles.container}>
       <Image source={logo} style={styles.logo} />
@@ -59,18 +69,17 @@ export default function HomeScreen({ navigation }: Props) {
         value={name}
         onChangeText={(text) => {
           setName(text);
-          if (errorMsg) setErrorMsg("");   // clear error on typing
+          if (errorMsg) setErrorMsg("");
         }}
         maxLength={20}
         autoCapitalize="words"
       />
 
-      {/* Inline error instead of Alert */}
       {errorMsg !== "" && <Text style={styles.errorText}>{errorMsg}</Text>}
 
       <TouchableOpacity
         style={[styles.button, (!name.trim() || loading) && styles.buttonDisabled]}
-        onPress={handleContinue}
+        onPress={handleCreateRoom}
         disabled={!name.trim() || loading}
       >
         {loading ? (
@@ -78,6 +87,15 @@ export default function HomeScreen({ navigation }: Props) {
         ) : (
           <Text style={styles.buttonText}>Crear sala</Text>
         )}
+      </TouchableOpacity>
+
+      {/* New button: navigate to room list */}
+      <TouchableOpacity
+        style={[styles.secondaryButton, (!name.trim() || loading) && styles.buttonDisabled]}
+        onPress={handleJoinRoom}
+        disabled={!name.trim() || loading}
+      >
+        <Text style={styles.buttonText}>Unirse a sala</Text>
       </TouchableOpacity>
     </View>
   );
