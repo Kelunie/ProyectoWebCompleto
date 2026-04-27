@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { WS_URL } from '../config';
-import { getRoomActions, getRoomChat, getRoomState } from '../services/api';
-import type { ChatMessage, GameState, RoomActionLog } from '../types/game';
-import { normalizeIncomingState } from './useGameSocket';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { WS_URL } from "../config";
+import { getRoomActions, getRoomChat, getRoomState } from "../services/api";
+import type { ChatMessage, GameState, RoomActionLog } from "../types/game";
+import { normalizeIncomingState } from "./useGameSocket";
 
 interface SpectatorWSMessage {
   type: string;
-  state?: any;
+  state?: unknown;
   message?: string;
 }
 
@@ -19,7 +19,10 @@ interface UseSpectatorRoomResult {
   error: string | null;
 }
 
-function mergeChatLogs(stateMessages: ChatMessage[], fetchedMessages: ChatMessage[]) {
+function mergeChatLogs(
+  stateMessages: ChatMessage[],
+  fetchedMessages: ChatMessage[],
+) {
   const byId = new Map<string, ChatMessage>();
 
   for (const message of fetchedMessages) byId.set(message.id, message);
@@ -40,11 +43,20 @@ export function useSpectatorRoom(roomId: string): UseSpectatorRoomResult {
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reconnectAttemptRef = useRef(0);
   const unmountedRef = useRef(false);
-  const hostIdRef = useRef('');
+  const hostIdRef = useRef("");
+  const reconnectFnRef = useRef<(() => void) | null>(null);
 
-  const applySnapshot = useCallback((rawState: any) => {
-    setState(prev => {
-      const next = normalizeIncomingState(rawState, prev?.hostId || hostIdRef.current);
+  const applySnapshot = useCallback((rawState: unknown) => {
+    const nextRawState =
+      typeof rawState === "object" && rawState !== null && "state" in rawState
+        ? ((rawState as { state?: unknown }).state ?? rawState)
+        : rawState;
+
+    setState((prev) => {
+      const next = normalizeIncomingState(
+        nextRawState,
+        prev?.hostId || hostIdRef.current,
+      );
       hostIdRef.current = next.hostId;
       return next;
     });
@@ -68,9 +80,11 @@ export function useSpectatorRoom(roomId: string): UseSpectatorRoomResult {
         setActionsLog(roomActions);
         setChatLog(roomChat);
         setError(null);
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (!unmountedRef.current) {
-          setError(err?.message || 'No se pudo cargar la partida');
+          setError(
+            err instanceof Error ? err.message : "No se pudo cargar la partida",
+          );
         }
       } finally {
         if (!unmountedRef.current) {
@@ -82,6 +96,19 @@ export function useSpectatorRoom(roomId: string): UseSpectatorRoomResult {
     [applySnapshot, roomId],
   );
 
+  const scheduleReconnect = useCallback(() => {
+    if (unmountedRef.current) return;
+
+    reconnectAttemptRef.current += 1;
+    const waitSeconds = Math.min(2 ** (reconnectAttemptRef.current - 1), 20);
+
+    reconnectTimerRef.current = setTimeout(() => {
+      loadSnapshot(false).finally(() => {
+        if (!unmountedRef.current) reconnectFnRef.current?.();
+      });
+    }, waitSeconds * 1000);
+  }, [loadSnapshot]);
+
   const connect = useCallback(() => {
     if (unmountedRef.current) return;
 
@@ -92,19 +119,19 @@ export function useSpectatorRoom(roomId: string): UseSpectatorRoomResult {
       reconnectAttemptRef.current = 0;
       socket.send(
         JSON.stringify({
-          type: 'watch_room',
+          type: "watch_room",
           room_id: roomId,
         }),
       );
       setError(null);
     };
 
-    socket.onmessage = event => {
+    socket.onmessage = (event) => {
       try {
         const data: SpectatorWSMessage = JSON.parse(event.data);
 
         switch (data.type) {
-          case 'public_state':
+          case "public_state":
             if (data.state) {
               const nextState = normalizeIncomingState(
                 data.state,
@@ -112,51 +139,42 @@ export function useSpectatorRoom(roomId: string): UseSpectatorRoomResult {
               );
               hostIdRef.current = nextState.hostId;
               setState(nextState);
-              setChatLog(prev =>
-                mergeChatLogs(nextState.chat_history, prev),
-              );
+              setChatLog((prev) => mergeChatLogs(nextState.chat_history, prev));
             }
             break;
-          case 'info':
+          case "info":
             break;
-          case 'error':
-            setError(data.message || 'Error del servidor');
+          case "error":
+            setError(data.message || "Error del servidor");
             break;
           default:
             break;
         }
       } catch {
-        setError('No se pudo procesar una actualizacion en vivo');
+        setError("No se pudo procesar una actualizacion en vivo");
       }
     };
 
     socket.onerror = () => {
-      setError('Conexion inestable con el servidor en vivo');
+      setError("Conexion inestable con el servidor en vivo");
     };
 
     socket.onclose = () => {
       if (unmountedRef.current) return;
       scheduleReconnect();
     };
-  }, [roomId]);
+  }, [roomId, scheduleReconnect]);
 
-  const scheduleReconnect = useCallback(() => {
-    if (unmountedRef.current) return;
-
-    reconnectAttemptRef.current += 1;
-    const waitSeconds = Math.min(2 ** (reconnectAttemptRef.current - 1), 20);
-
-    reconnectTimerRef.current = setTimeout(() => {
-      loadSnapshot(false).finally(() => {
-        if (!unmountedRef.current) connect();
-      });
-    }, waitSeconds * 1000);
-  }, [connect, loadSnapshot]);
+  useEffect(() => {
+    reconnectFnRef.current = connect;
+  }, [connect]);
 
   useEffect(() => {
     unmountedRef.current = false;
-    loadSnapshot(true).finally(() => {
-      if (!unmountedRef.current) connect();
+    queueMicrotask(() => {
+      loadSnapshot(true).finally(() => {
+        if (!unmountedRef.current) connect();
+      });
     });
 
     return () => {
