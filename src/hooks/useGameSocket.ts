@@ -161,7 +161,8 @@ export function normalizeIncomingState(
     current_turn_player_id: raw.current_turn_player_id ?? null,
     ended: raw.ended ?? false,
     winners: raw.winners ?? [],
-    votingResults: raw.votingResults ?? raw.voting_results,
+    // Some server versions send this field as "votes".
+    votingResults: raw.votingResults ?? raw.voting_results ?? raw.votes ?? {},
     mostVotedPlayer: normalizeMostVotedPlayer(raw, players),
     infectedPlayerIds: raw.infectedPlayerIds ?? raw.infected_player_ids,
   };

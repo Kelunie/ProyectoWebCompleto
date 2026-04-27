@@ -56,6 +56,11 @@ export default function VotingView({ state, actions, currentUserId }: Props) {
     actions.advancePhase();
   }, [actions, allAlivePlayersVoted, isHost, state.round]);
 
+  useEffect(() => {
+    if (!allAlivePlayersVoted) return;
+    setCountdown(0);
+  }, [allAlivePlayersVoted]);
+
   const handleVote = (targetId: string) => {
     if (!canVote || hasVoted) return;
     setVotedFor(targetId);
@@ -91,15 +96,6 @@ export default function VotingView({ state, actions, currentUserId }: Props) {
           <Text style={styles.advanceButtonText}>
             Terminar votación y ver resultado
           </Text>
-        </TouchableOpacity>
-      )}
-
-      {countdown > 0 && isHost && !allAlivePlayersVoted && (
-        <TouchableOpacity
-          style={styles.advanceButton}
-          onPress={actions.advancePhase}
-        >
-          <Text style={styles.advanceButtonText}>Cerrar votación ahora</Text>
         </TouchableOpacity>
       )}
 
