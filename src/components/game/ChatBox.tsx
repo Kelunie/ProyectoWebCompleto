@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,36 +7,44 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
-} from "react-native";
-import { ChatMessage } from "../../types/game";
-import { chatBoxStyles as styles } from "../../styles/gameStyles";
+} from 'react-native';
+import { ChatMessage } from '../../types/game';
+import { chatBoxStyles as styles } from '../../styles/gameStyles';
 
 interface Props {
   messages: ChatMessage[];
   onSend: (message: string) => void;
+  canSend?: boolean;
+  sendBlockedMessage?: string;
 }
 
-export default function ChatBox({ messages, onSend }: Props) {
-  const [text, setText] = useState("");
+export default function ChatBox({
+  messages,
+  onSend,
+  canSend = true,
+  sendBlockedMessage,
+}: Props) {
+  const [text, setText] = useState('');
   const flatListRef = useRef<FlatList>(null);
 
   const handleSend = () => {
+    if (!canSend) return;
     const trimmed = text.trim();
     if (!trimmed) return;
     onSend(trimmed);
-    setText("");
+    setText('');
   };
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.container}
     >
       <FlatList
         ref={flatListRef}
         style={styles.list}
         data={messages}
-        keyExtractor={(item) => item.id}
+        keyExtractor={item => item.id}
         renderItem={({ item }) => (
           <View style={styles.messageBubble}>
             <Text style={styles.sender}>{item.sender.name}: </Text>
@@ -56,11 +64,19 @@ export default function ChatBox({ messages, onSend }: Props) {
           placeholderTextColor="#888"
           onSubmitEditing={handleSend}
           returnKeyType="send"
+          editable={canSend}
         />
-        <TouchableOpacity style={styles.sendButton} onPress={handleSend}>
+        <TouchableOpacity
+          style={[styles.sendButton, !canSend && styles.sendButtonDisabled]}
+          onPress={handleSend}
+          disabled={!canSend}
+        >
           <Text style={styles.sendText}>Enviar</Text>
         </TouchableOpacity>
       </View>
+      {!canSend && sendBlockedMessage ? (
+        <Text style={styles.blockedHint}>{sendBlockedMessage}</Text>
+      ) : null}
     </KeyboardAvoidingView>
   );
 }

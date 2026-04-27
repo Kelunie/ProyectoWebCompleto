@@ -5,5 +5,17 @@ export function normalizePhase(phase: string): GamePhase {
     .replace(/([A-Z])/g, "_$1")
     .toLowerCase()
     .replace(/^_/, "");
-  return normalized as GamePhase;
+
+  const validPhases: GamePhase[] = [
+    "lobby",
+    "secret_actions",
+    "discussion",
+    "voting",
+    "resolution",
+    "ended",
+  ];
+
+  return validPhases.includes(normalized as GamePhase)
+    ? (normalized as GamePhase)
+    : "lobby";
 }

@@ -1,19 +1,19 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
   FlatList,
   TouchableOpacity,
   ActivityIndicator,
-} from "react-native";
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../types/navigation";
-import { getOpenRooms } from "../services/api";
-import { getUserId } from "../utils/userId";
-import { roomsScreenStyles as styles } from "../styles/roomsScreenStyles"; // see step 4
-import { useFocusEffect } from "@react-navigation/native";
+} from 'react-native';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../types/navigation';
+import { getOpenRooms } from '../services/api';
+import { getUserId } from '../utils/userId';
+import { roomsScreenStyles as styles } from '../styles/roomsScreenStyles'; // see step 4
+import { useFocusEffect } from '@react-navigation/native';
 
-type Props = NativeStackScreenProps<RootStackParamList, "Rooms">;
+type Props = NativeStackScreenProps<RootStackParamList, 'Rooms'>;
 
 interface RoomInfo {
   id: string;
@@ -27,16 +27,16 @@ export default function RoomsScreen({ route, navigation }: Props) {
   const { name } = route.params;
   const [rooms, setRooms] = useState<RoomInfo[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   const fetchRooms = async () => {
     try {
       setLoading(true);
-      setError("");
+      setError('');
       const data = await getOpenRooms();
       setRooms(data.rooms || []);
     } catch (err: any) {
-      setError(err.message || "Error al cargar salas");
+      setError(err.message || 'Error al cargar salas');
     } finally {
       setLoading(false);
     }
@@ -46,32 +46,36 @@ export default function RoomsScreen({ route, navigation }: Props) {
   useFocusEffect(
     React.useCallback(() => {
       fetchRooms();
-    }, [])
+    }, []),
   );
 
-  const handleJoin = async (roomId: string) => {
+  const handleJoin = async (item: RoomInfo) => {
     try {
       const userId = await getUserId();
-      navigation.navigate("Game", {
-        roomId,
+      navigation.navigate('Game', {
+        roomId: item.id,
         userId,
         name,
+        hostUserId: item.host_user_id,
       });
-    } catch (err: any) {
+    } catch {
       // fallback
-      const userId = "user-" + Math.random().toString(36).substring(7);
-      navigation.navigate("Game", { roomId, userId, name });
+      const userId = 'user-' + Math.random().toString(36).substring(7);
+      navigation.navigate('Game', {
+        roomId: item.id,
+        userId,
+        name,
+        hostUserId: item.host_user_id,
+      });
     }
   };
 
   const renderItem = ({ item }: { item: RoomInfo }) => (
-    <TouchableOpacity
-      style={styles.roomItem}
-      onPress={() => handleJoin(item.id)}
-    >
+    <TouchableOpacity style={styles.roomItem} onPress={() => handleJoin(item)}>
       <Text style={styles.roomName}>{item.name}</Text>
       <Text style={styles.roomDetails}>
-        Jugadores: {item.player_count} {item.started ? "⏳ En juego" : "🟢 Abierta"}
+        Jugadores: {item.player_count}{' '}
+        {item.started ? '⏳ En juego' : '🟢 Abierta'}
       </Text>
     </TouchableOpacity>
   );
@@ -88,7 +92,7 @@ export default function RoomsScreen({ route, navigation }: Props) {
       ) : (
         <FlatList
           data={rooms}
-          keyExtractor={(item) => item.id}
+          keyExtractor={item => item.id}
           renderItem={renderItem}
           contentContainerStyle={styles.list}
         />
